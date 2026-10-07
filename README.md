@@ -14,3 +14,8 @@
 
 ## Estructura
 css/styles.css · js/store.js (roles, SLA, caché) · js/firebase.js (Auth + Firestore) · js/ui.js · js/dashboard.js · js/tickets.js · js/puntos.js · js/usuarios.js · js/chat.js · js/app.js
+
+## Tickets
+- Urgencia y tiempo máximo de atención: Crítica 30 min · Alta 1 h · Media 4 h · Baja 24 h · Programada esta semana.
+- Cada ticket muestra su módulo, quién lo reportó y una cuenta regresiva en vivo (hh:mm:ss) desde que se levanta.
+- Cuando otra persona levanta un ticket, a administradores y usuarios comunes les suena una alarma y una voz dice quién lo levantó y de qué módulo. El navegador requiere un primer clic en la página para permitir audio y voz.
