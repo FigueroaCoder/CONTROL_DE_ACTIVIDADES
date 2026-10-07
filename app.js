@@ -12,7 +12,7 @@ function appStart(email){
  $('#me').innerHTML=`<span class="av">${esc(u.n[0].toUpperCase())}</span><div><b>${esc(u.n)}</b><small>${RL[u.r]}</small></div><button class="ib" title="Cerrar sesión" onclick="FB.logout()"><i data-lucide="log-out"></i></button>`;
  if(esAdmin()&&!DB.get('modulos',[]).length)DB.set('modulos',['Módulo 6','Módulo 7']);
  cur='';chatA='general';$$('.view').forEach(x=>x.classList.remove('on','out'));go('dashboard');
- if(!_iv)_iv=setInterval(vigilarSla,15000);setTimeout(vigilarSla,1500);
+ if(!_iv){_iv=setInterval(vigilarSla,15000);setInterval(tickSla,1000)}setTimeout(vigilarSla,1500);
 }
 function appStop(){S.user=null;resetCache();showLogin(true)}
 
@@ -22,5 +22,10 @@ function vigilarSla(){
  if(esAdmin())a.forEach(t=>{if(activo(t)&&t.sla<now&&!t.alertado){t.alertado=1;ch=true;
   notify(S.user,`⏰ SLA vencido: ${t.id} · ${t.resumen}`);if(t.usuarioAsignado&&t.usuarioAsignado!==S.user)notify(t.usuarioAsignado,`⏰ SLA vencido: ${t.id}`)}});
  if(ch){DB.set('tickets',a);beep();toast('Hay tickets con tiempo de atención vencido','err');return}
- $$('[data-sla]').forEach(e=>{const t=a.find(x=>x.id===e.dataset.sla);if(t){const l=t.sla-now;e.textContent=fmtLeft(l);e.className='sla '+slaCls(t,l)}});
+}
+
+/* Cuenta regresiva en vivo (cada segundo) */
+function tickSla(){
+ if(!S.user)return;const now=Date.now(),a=DB.get('tickets',[]);
+ $$('[data-sla]').forEach(e=>{const t=a.find(x=>x.id===e.dataset.sla);if(t){const l=t.sla-now;e.textContent='⏱ '+fmtCount(l);e.className='sla '+slaCls(t,l)}});
 }
