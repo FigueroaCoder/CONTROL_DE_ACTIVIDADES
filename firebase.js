@@ -49,6 +49,9 @@ onAuthStateChanged(auth,async u=>{
   }
  }catch(e){fail(e);await signOut(auth);return}
  listen('usuarios',a=>{Object.keys(USERS).forEach(k=>delete USERS[k]);a.forEach(x=>USERS[x.email]={n:x.nombre,r:x.rol,uid:x.uid,email:x.email})});
- ['puntos','tickets','notificaciones','chat'].forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
+ ['puntos','notificaciones','chat'].forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
+ /* Ticket nuevo de otra persona: alarma + voz para admin y usuario común */
+ listen('tickets',a=>{const prev=new Set(C.tickets.map(t=>t.id));C.tickets=a.sort(SORT.tickets);if(!started)return;const me=auth.currentUser&&auth.currentUser.email;
+  if(['admin','comun'].includes(USERS[me]&&USERS[me].r))C.tickets.filter(t=>!prev.has(t.id)&&t.usuarioReporta!==me&&Date.now()-t.creado<120000).forEach(alertaTicket)});
  listen('modulos',a=>{C.modulos=a.sort(SORT.modulos).map(x=>x.nombre)});
 });
