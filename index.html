@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plant Operational Hub · L10</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<aside id="side">
+  <div class="brand"><div class="lg"><i data-lucide="shield-check"></i></div><div><b>OPERATIONAL HUB</b><small>L10 · 5S & Hallazgos</small></div></div>
+  <nav class="nav">
+    <button data-v="dashboard" onclick="go('dashboard')"><i data-lucide="layout-dashboard"></i>Dashboard</button>
+    <button data-v="tickets" onclick="go('tickets')"><i data-lucide="ticket"></i>Tickets<em id="bTk">0</em></button>
+    <button data-v="modulos" onclick="go('modulos')"><i data-lucide="layers"></i>Módulos</button>
+    <button data-v="tareas" onclick="go('tareas')"><i data-lucide="list-todo"></i>Mis tareas</button>
+    <button data-v="admin" onclick="go('admin')"><i data-lucide="user-check"></i>Asignación</button>
+    <button data-v="usuarios" onclick="go('usuarios')" style="display:none"><i data-lucide="users"></i>Usuarios</button>
+    <button data-v="chat" onclick="go('chat')"><i data-lucide="message-square"></i>Chat</button>
+  </nav>
+  <div class="mods"><div class="mh"><span>Módulos L10</span><button onclick="modNuevo()" title="Nuevo módulo"><i data-lucide="plus"></i></button></div><div id="sideMods"></div></div>
+</aside>
+<div id="shell">
+  <header>
+    <div class="crumb">Hub <i data-lucide="chevron-right"></i> <b id="crumb">Dashboard</b></div>
+    <div class="hr">
+      <div class="me" id="me"></div>
+      <button class="ib" onclick="beep()" title="Probar sonido"><i data-lucide="volume-2"></i></button>
+      <div class="rel">
+        <button class="ib" onclick="toggleNotifs()"><i data-lucide="bell"></i><span id="nBadge" class="nb"></span></button>
+        <div id="nDrop" class="drop"><div class="dh2"><b>Notificaciones</b><button onclick="limpiarNotifs()">Limpiar</button></div><div id="nList"></div></div>
+      </div>
+      <div class="pill"><i data-lucide="check-square"></i>Mis tareas <b id="bTareas">0</b></div>
+    </div>
+  </header>
+  <main>
+    <section class="view" id="v-dashboard"></section>
+    <section class="view" id="v-tickets"></section>
+    <section class="view" id="v-modulos"></section>
+    <section class="view" id="v-tareas"></section>
+    <section class="view" id="v-admin"></section>
+    <section class="view" id="v-usuarios"></section>
+    <section class="view" id="v-chat"></section>
+  </main>
+</div>
+<div id="modal" onclick="if(event.target===this)closeModal()"><div class="dlg" id="dlg"></div></div>
+<div id="login"><form class="lcard" onsubmit="doLogin(event)"><div class="lg"><i data-lucide="shield-check"></i></div><h2>Operational Hub L10</h2><p>Inicia sesión para continuar</p><input id="lEm" type="email" placeholder="Correo" required autocomplete="username"><input id="lPw" type="password" placeholder="Contraseña" required autocomplete="current-password"><div id="lErr"></div><button class="btn b-pri" id="lBtn" style="justify-content:center">Entrar</button></form></div>
+<div id="toasts"></div>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/tickets.js"></script>
+<script src="js/puntos.js"></script>
+<script src="js/usuarios.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/firebase.js"></script>
+</body>
+</html>

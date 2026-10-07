@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ok(){ return request.auth != null; }
+    function rol(){ return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol; }
+    function admin(){ return ok() && rol() == 'admin'; }
+    function gest(){ return ok() && rol() in ['admin','comun']; }
+    function mail(){ return request.auth.token.email; }
+    function iniciado(){ return exists(/databases/$(database)/documents/config/init); }
+
+    match /usuarios/{uid} {
+      allow read: if ok();
+      allow create: if admin() || (request.auth.uid == uid && request.resource.data.rol == 'admin' && !iniciado());
+      allow update, delete: if admin();
+    }
+    match /config/{d} { allow read: if ok(); allow create: if ok() && !iniciado(); }
+    match /modulos/{d} { allow read: if ok(); allow write: if admin(); }
+    match /puntos/{d} {
+      allow read, create: if ok();
+      allow update: if gest();
+      allow delete: if gest() && resource.data.usuarioLevanta == mail() && resource.data.estado != 'atendido';
+    }
+    match /tickets/{d} {
+      allow read, create: if ok();
+      allow update: if gest();
+      allow delete: if gest() && resource.data.usuarioReporta == mail() && resource.data.estado in ['abierto','asignado'];
+    }
+    match /notificaciones/{d} { allow read, write: if ok(); }
+    match /chat/{d} { allow read, create: if ok(); }
+  }
+}
