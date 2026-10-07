@@ -19,7 +19,7 @@ function drawTickets(){
   .sort((a,b)=>(activo(b)-activo(a))||(activo(a)?a.sla-b.sla:b.creado-a.creado));
  $('#tkBody').innerHTML=rows.length?rows.map((t,i)=>`<tr class="row" style="animation-delay:${Math.min(i,10)*35}ms">
   <td class="mono acc">${esc(t.id)}</td>
-  <td><b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div>${t.estado==='rechazado'?`<div class="sm" style="color:#f87171">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
+  <td><span class="badge" style="--c:#4f8cff"><i data-lucide="box"></i>${esc(t.modulo)}</span> <b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div><div class="sm mu">Reportó: ${esc(nom(t.usuarioReporta))}</div>${t.estado==='rechazado'?`<div class="sm" style="color:#f87171">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
   <td>${esc(t.modulo)}</td>
   <td>${urgB(t.urgencia)}<div class="sm mu">Atender en: ${URG[t.urgencia].t}</div>${slaHtml(t)}</td>
   <td>${t.usuarioAsignado?esc(nom(t.usuarioAsignado)):'<span class="warn-t">Sin asignar</span>'}</td>
@@ -38,7 +38,7 @@ function tkNuevo(){
   const a=DB.get('tickets',[]),u=urgVal(),now=Date.now();let id;do{id='TK-'+Math.floor(1000+Math.random()*9000)}while(a.some(t=>t.id===id));
   const t={id,modulo:$('#f_mod').value,resumen,comentario,usuarioReporta:S.user,usuarioAsignado:null,estado:'abierto',urgencia:u,creado:now,slaIni:now,sla:calcSla(now,u),hist:[]};
   addHist(t,'Ticket creado · Urgencia '+URG[u].n+' ('+URG[u].t+')');a.unshift(t);DB.set('tickets',a);
-  const msg=`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}): ${resumen}`;
+  const msg=`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}) · ${t.modulo} · levantó ${nom(S.user)}: ${resumen}`;
   notifyRoles(['admin','comun'],msg);beep();toast('Ticket '+id+' emitido','ok');tkF='activos';renderAll();
  }});
 }
