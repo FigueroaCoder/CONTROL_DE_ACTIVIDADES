@@ -73,7 +73,7 @@ td{padding:12px 14px;border-bottom:1px solid #162038;vertical-align:top}tr.row{a
 .mono{font-family:ui-monospace,monospace}.acc{color:#fbbf24;font-weight:700}.mu{color:var(--mu)}.sm{font-size:11px}.warn-t{color:#fbbf24}.empty{text-align:center;color:var(--mu);padding:30px}
 .badge{--c:#8393b2;display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--c);display:inline-block}
-.sla{display:inline-block;margin-top:3px;font:600 11px ui-monospace,monospace}.sla.ok{color:#34d399}.sla.warn{color:#fbbf24}.sla.over{color:#f87171;animation:blink 1.2s infinite}
+.sla{display:inline-block;margin-top:3px;font:700 13px ui-monospace,monospace;letter-spacing:.02em}.sla.ok{color:#34d399}.sla.warn{color:#fbbf24}.sla.over{color:#f87171;animation:blink 1.2s infinite}
 .scale{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.scale span{--c:#888;display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;background:var(--p);border:1px solid color-mix(in srgb,var(--c) 40%,var(--l))}
 .tb{display:flex;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid var(--l);flex-wrap:wrap}
 .chips{display:flex;gap:6px;flex-wrap:wrap}.chips button{border:1px solid var(--l);background:none;color:var(--mu);padding:6px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
@@ -179,7 +179,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const hoy=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 /* min = minutos máximos de atención; 0 = durante esta semana (hasta el domingo 23:59) */
 const URG={
- 1:{n:'Crítica',min:15,c:'#ef4444',t:'15 min'},
+ 1:{n:'Crítica',min:30,c:'#ef4444',t:'30 min'},
  2:{n:'Alta',min:60,c:'#f97316',t:'1 hora'},
  3:{n:'Media',min:240,c:'#eab308',t:'4 horas'},
  4:{n:'Baja',min:1440,c:'#84cc16',t:'24 horas'},
@@ -214,7 +214,15 @@ function notify(to,msg){
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const icons=()=>{if(window.lucide)lucide.createIcons()};
 function toast(m,t=''){const e=document.createElement('div');e.className='toast '+t;e.textContent=m;$('#toasts').appendChild(e);setTimeout(()=>{e.classList.add('bye');setTimeout(()=>e.remove(),300)},3400)}
-function beep(){try{const A=window.AudioContext||window.webkitAudioContext,c=new A(),o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(880,c.currentTime);o.frequency.exponentialRampToValueAtTime(1760,c.currentTime+.3);g.gain.setValueAtTime(.6,c.currentTime);g.gain.exponentialRampToValueAtTime(.01,c.currentTime+.5);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.5)}catch(e){}}
+let _ac;
+function beep(){try{const A=window.AudioContext||window.webkitAudioContext;_ac=_ac||new A();const c=_ac;if(c.state==='suspended')c.resume();
+ const m=c.createGain(),k=c.createDynamicsCompressor();m.gain.value=1;m.connect(k);k.connect(c.destination);
+ for(let i=0;i<4;i++){const t=c.currentTime+i*.5,o=c.createOscillator(),g=c.createGain(),up=i%2;o.type='square';o.frequency.setValueAtTime(up?988:740,t);o.frequency.exponentialRampToValueAtTime(up?1480:1175,t+.4);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(1,t+.03);g.gain.exponentialRampToValueAtTime(.01,t+.45);o.connect(g);g.connect(m);o.start(t);o.stop(t+.5)}}catch(e){}}
+function hablar(txt){try{if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt),v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('es'));u.lang='es-MX';u.volume=1;u.rate=.95;if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function alertaTicket(t){beep();toast(`🚨 Nuevo ticket de ${nom(t.usuarioReporta)} · ${t.modulo}`,'err');setTimeout(()=>hablar(`Nuevo ticket. Levantado por ${nom(t.usuarioReporta)}. Módulo: ${t.modulo}.`),2100)}
+/* Los navegadores bloquean audio y voz hasta el primer clic de la persona */
+document.addEventListener('click',()=>{try{const A=window.AudioContext||window.webkitAudioContext;_ac=_ac||new A();_ac.resume();speechSynthesis.getVoices()}catch(e){}},{once:true});
 function countTo(el,n){const s=+el.dataset.v||0,t0=performance.now();el.dataset.v=n;(function f(t){const p=Math.min(1,(t-t0)/650);el.textContent=Math.round(s+(n-s)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
 
 /* Modal genérico */
@@ -228,7 +236,7 @@ const closeModal=()=>$('#modal').classList.remove('on');
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 const fld=(l,h)=>`<label class="fl"><span>${l}</span>${h}</label>`;
 const opts=(a,sel)=>a.map(([v,t])=>`<option value="${esc(v)}" ${v==sel?'selected':''}>${esc(t)}</option>`).join('');
-const urgPick=sel=>`<div class="fl"><span>¿Qué tan crítica es la atención?</span><div class="urg">${Object.entries(URG).map(([k,u])=>`<label style="--c:${u.c}"><input type="radio" name="urg" value="${k}" ${k==sel?'checked':''}><span><b>${u.n}</b><small>${u.t}</small></span></label>`).join('')}</div><small class="mu">Tiempo máximo de atención: desde los próximos 15 minutos hasta esta semana.</small></div>`;
+const urgPick=sel=>`<div class="fl"><span>¿Qué tan crítica es la atención?</span><div class="urg">${Object.entries(URG).map(([k,u])=>`<label style="--c:${u.c}"><input type="radio" name="urg" value="${k}" ${k==sel?'checked':''}><span><b>${u.n}</b><small>${u.t}</small></span></label>`).join('')}</div><small class="mu">Tiempo máximo de atención: desde los próximos 30 minutos hasta esta semana.</small></div>`;
 const urgVal=()=>+$('input[name=urg]:checked').value;
 
 /* Helpers compartidos */
@@ -237,9 +245,10 @@ const badge=s=>`<span class="badge" style="--c:${ST[s][1]}">${ST[s][0]}</span>`;
 const urgB=u=>`<span class="badge" style="--c:${URG[u].c}"><i class="dot"></i>${URG[u].n}</span>`;
 const activo=t=>t.estado==='abierto'||t.estado==='asignado';
 const fmtD=d=>new Date(d).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+function fmtCount(ms){const a=Math.abs(ms),s=Math.floor(a/1000),d=Math.floor(s/86400),p=n=>String(n).padStart(2,'0');return(ms<0?'Vencido +':'')+(d?d+'d ':'')+p(Math.floor(s%86400/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60)}
 function fmtLeft(ms){const m=Math.floor(Math.abs(ms)/60000),h=Math.floor(m/60),d=Math.floor(h/24),s=d?`${d}d ${h%24}h`:h?`${h}h ${m%60}m`:`${m}m`;return ms<0?'Vencido hace '+s:'Quedan '+s}
 const slaCls=(t,l)=>l<0?'over':l<(t.sla-(t.slaIni||t.creado))*.25?'warn':'ok';
-const slaHtml=t=>{if(!activo(t))return'';const l=t.sla-Date.now();return`<span class="sla ${slaCls(t,l)}" data-sla="${t.id}">${fmtLeft(l)}</span>`};
+const slaHtml=t=>{if(!activo(t))return'';const l=t.sla-Date.now();return`<span class="sla ${slaCls(t,l)}" data-sla="${t.id}">⏱ ${fmtCount(l)}</span>`};
 function stats(){const p=DB.get('puntos',[]),t=DB.get('tickets',[]),now=Date.now();return{p,t,total:p.length+t.length,
  pend:p.filter(x=>x.estado==='pendiente').length+t.filter(x=>x.estado==='abierto').length,
  proc:p.filter(x=>x.estado==='en_proceso').length+t.filter(x=>x.estado==='asignado').length,
@@ -323,7 +332,7 @@ function drawTickets(){
   .sort((a,b)=>(activo(b)-activo(a))||(activo(a)?a.sla-b.sla:b.creado-a.creado));
  $('#tkBody').innerHTML=rows.length?rows.map((t,i)=>`<tr class="row" style="animation-delay:${Math.min(i,10)*35}ms">
   <td class="mono acc">${esc(t.id)}</td>
-  <td><b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div>${t.estado==='rechazado'?`<div class="sm" style="color:#f87171">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
+  <td><span class="badge" style="--c:#4f8cff"><i data-lucide="box"></i>${esc(t.modulo)}</span> <b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div><div class="sm mu">Reportó: ${esc(nom(t.usuarioReporta))}</div>${t.estado==='rechazado'?`<div class="sm" style="color:#f87171">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
   <td>${esc(t.modulo)}</td>
   <td>${urgB(t.urgencia)}<div class="sm mu">Atender en: ${URG[t.urgencia].t}</div>${slaHtml(t)}</td>
   <td>${t.usuarioAsignado?esc(nom(t.usuarioAsignado)):'<span class="warn-t">Sin asignar</span>'}</td>
@@ -342,7 +351,7 @@ function tkNuevo(){
   const a=DB.get('tickets',[]),u=urgVal(),now=Date.now();let id;do{id='TK-'+Math.floor(1000+Math.random()*9000)}while(a.some(t=>t.id===id));
   const t={id,modulo:$('#f_mod').value,resumen,comentario,usuarioReporta:S.user,usuarioAsignado:null,estado:'abierto',urgencia:u,creado:now,slaIni:now,sla:calcSla(now,u),hist:[]};
   addHist(t,'Ticket creado · Urgencia '+URG[u].n+' ('+URG[u].t+')');a.unshift(t);DB.set('tickets',a);
-  const msg=`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}): ${resumen}`;
+  const msg=`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}) · ${t.modulo} · levantó ${nom(S.user)}: ${resumen}`;
   notifyRoles(['admin','comun'],msg);beep();toast('Ticket '+id+' emitido','ok');tkF='activos';renderAll();
  }});
 }
@@ -528,7 +537,7 @@ function appStart(email){
  $('#me').innerHTML=`<span class="av">${esc(u.n[0].toUpperCase())}</span><div><b>${esc(u.n)}</b><small>${RL[u.r]}</small></div><button class="ib" title="Cerrar sesión" onclick="FB.logout()"><i data-lucide="log-out"></i></button>`;
  if(esAdmin()&&!DB.get('modulos',[]).length)DB.set('modulos',['Módulo 6','Módulo 7']);
  cur='';chatA='general';$$('.view').forEach(x=>x.classList.remove('on','out'));go('dashboard');
- if(!_iv)_iv=setInterval(vigilarSla,15000);setTimeout(vigilarSla,1500);
+ if(!_iv){_iv=setInterval(vigilarSla,15000);setInterval(tickSla,1000)}setTimeout(vigilarSla,1500);
 }
 function appStop(){S.user=null;resetCache();showLogin(true)}
 
@@ -538,7 +547,12 @@ function vigilarSla(){
  if(esAdmin())a.forEach(t=>{if(activo(t)&&t.sla<now&&!t.alertado){t.alertado=1;ch=true;
   notify(S.user,`⏰ SLA vencido: ${t.id} · ${t.resumen}`);if(t.usuarioAsignado&&t.usuarioAsignado!==S.user)notify(t.usuarioAsignado,`⏰ SLA vencido: ${t.id}`)}});
  if(ch){DB.set('tickets',a);beep();toast('Hay tickets con tiempo de atención vencido','err');return}
- $$('[data-sla]').forEach(e=>{const t=a.find(x=>x.id===e.dataset.sla);if(t){const l=t.sla-now;e.textContent=fmtLeft(l);e.className='sla '+slaCls(t,l)}});
+}
+
+/* Cuenta regresiva en vivo (cada segundo) */
+function tickSla(){
+ if(!S.user)return;const now=Date.now(),a=DB.get('tickets',[]);
+ $$('[data-sla]').forEach(e=>{const t=a.find(x=>x.id===e.dataset.sla);if(t){const l=t.sla-now;e.textContent='⏱ '+fmtCount(l);e.className='sla '+slaCls(t,l)}});
 }
 
 </script>
@@ -594,7 +608,10 @@ onAuthStateChanged(auth,async u=>{
   }
  }catch(e){fail(e);await signOut(auth);return}
  listen('usuarios',a=>{Object.keys(USERS).forEach(k=>delete USERS[k]);a.forEach(x=>USERS[x.email]={n:x.nombre,r:x.rol,uid:x.uid,email:x.email})});
- ['puntos','tickets','notificaciones','chat'].forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
+ ['puntos','notificaciones','chat'].forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
+ /* Ticket nuevo de otra persona: alarma + voz para admin y usuario común */
+ listen('tickets',a=>{const prev=new Set(C.tickets.map(t=>t.id));C.tickets=a.sort(SORT.tickets);if(!started)return;const me=auth.currentUser&&auth.currentUser.email;
+  if(['admin','comun'].includes(USERS[me]&&USERS[me].r))C.tickets.filter(t=>!prev.has(t.id)&&t.usuarioReporta!==me&&Date.now()-t.creado<120000).forEach(alertaTicket)});
  listen('modulos',a=>{C.modulos=a.sort(SORT.modulos).map(x=>x.nombre)});
 });
 
