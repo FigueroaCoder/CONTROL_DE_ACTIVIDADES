@@ -9,7 +9,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const hoy=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 /* min = minutos máximos de atención; 0 = durante esta semana (hasta el domingo 23:59) */
 const URG={
- 1:{n:'Crítica',min:15,c:'#ef4444',t:'15 min'},
+ 1:{n:'Crítica',min:30,c:'#ef4444',t:'30 min'},
  2:{n:'Alta',min:60,c:'#f97316',t:'1 hora'},
  3:{n:'Media',min:240,c:'#eab308',t:'4 horas'},
  4:{n:'Baja',min:1440,c:'#84cc16',t:'24 horas'},
