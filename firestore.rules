@@ -8,7 +8,9 @@ service cloud.firestore {
     function rep(){ return ok() && rol() == 'reportero'; }
     function mail(){ return request.auth.token.email; }
     function iniciado(){ return exists(/databases/$(database)/documents/config/init); }
+    function txt(v, max){ return v is string && v.size() > 0 && v.size() <= max; }
 
+    // Solo el administrador cambia tipos de usuario; nadie puede subirse el rol a sí mismo
     match /usuarios/{uid} {
       allow read: if ok();
       allow create: if admin() || (request.auth.uid == uid && request.resource.data.rol == 'admin' && !iniciado());
@@ -25,16 +27,30 @@ service cloud.firestore {
 
     match /tickets/{d} {
       allow read: if ok();
-      allow create: if ok() && request.resource.data.usuarioReporta == mail();
-      // Gestores atienden; el reportero solo puede REVOCAR un ticket propio mientras siga "abierto" (sin aceptar)
-      allow update: if gest()
+      // Un ticket nuevo siempre nace "abierto", a nombre de quien lo crea y con datos válidos
+      allow create: if ok()
+        && request.resource.data.usuarioReporta == mail()
+        && request.resource.data.estado == 'abierto'
+        && request.resource.data.urgencia in [1,2,3,4,5]
+        && txt(request.resource.data.resumen, 300)
+        && txt(request.resource.data.comentario, 3000);
+      // Gestores atienden (sin poder cambiar quién reportó); el reportero solo REVOCA un ticket propio mientras siga "abierto"
+      allow update: if (gest() && request.resource.data.usuarioReporta == resource.data.usuarioReporta)
         || (rep() && resource.data.usuarioReporta == mail() && resource.data.estado == 'abierto'
             && request.resource.data.estado == 'revocado' && request.resource.data.usuarioReporta == mail());
       allow delete: if gest() && resource.data.usuarioReporta == mail() && resource.data.estado in ['abierto','asignado'];
     }
-    match /notificaciones/{d} { allow read, write: if ok(); }
+
+    // Notificaciones: cada persona solo lee, marca y borra las SUYAS
+    match /notificaciones/{d} {
+      allow read, update, delete: if ok() && resource.data.destinatario == mail();
+      allow create: if ok() && request.resource.data.destinatario is string && txt(request.resource.data.mensaje, 700);
+    }
 
     // Chat: solo admin y usuario común (el reportero no entra)
-    match /chat/{d} { allow read, create: if gest(); }
+    match /chat/{d} {
+      allow read: if gest();
+      allow create: if gest() && request.resource.data.emisor == mail() && txt(request.resource.data.texto, 2000);
+    }
   }
 }

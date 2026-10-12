@@ -3,12 +3,21 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const icons=()=>{if(window.lucide)lucide.createIcons()};
 function toast(m,t=''){const e=document.createElement('div');e.className='toast '+t;e.textContent=m;$('#toasts').appendChild(e);setTimeout(()=>{e.classList.add('bye');setTimeout(()=>e.remove(),300)},3400)}
 let _ac;
-function beep(){try{const A=window.AudioContext||window.webkitAudioContext;_ac=_ac||new A();const c=_ac;if(c.state==='suspended')c.resume();
+function beep(n=4){try{const A=window.AudioContext||window.webkitAudioContext;_ac=_ac||new A();const c=_ac;if(c.state==='suspended')c.resume();
  const m=c.createGain(),k=c.createDynamicsCompressor();m.gain.value=1;m.connect(k);k.connect(c.destination);
- for(let i=0;i<4;i++){const t=c.currentTime+i*.5,o=c.createOscillator(),g=c.createGain(),up=i%2;o.type='square';o.frequency.setValueAtTime(up?988:740,t);o.frequency.exponentialRampToValueAtTime(up?1480:1175,t+.4);
+ for(let i=0;i<n;i++){const t=c.currentTime+i*.5,o=c.createOscillator(),g=c.createGain(),up=i%2;o.type='square';o.frequency.setValueAtTime(up?988:740,t);o.frequency.exponentialRampToValueAtTime(up?1480:1175,t+.4);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(1,t+.03);g.gain.exponentialRampToValueAtTime(.01,t+.45);o.connect(g);g.connect(m);o.start(t);o.stop(t+.5)}}catch(e){}}
 function hablar(txt){try{if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt),v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('es'));u.lang='es-MX';u.volume=1;u.rate=.95;if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
-function alertaTicket(t){beep();toast(`🚨 Nuevo ticket de ${nom(t.usuarioReporta)} · ${t.modulo}`,'err');setTimeout(()=>hablar(`Nuevo ticket. Levantado por ${nom(t.usuarioReporta)}. Módulo: ${t.modulo}.`),2100)}
+/* Avisos por voz. Solo suenan a quien le corresponde (lo decide firebase.js al detectar el cambio en tiempo real) */
+const numTk=id=>String(id).replace(/\D/g,'');
+function alertaTicket(t){const s=URG[t.urgencia]?URG[t.urgencia].n:'',fuerte=t.urgencia<=2;
+ beep(fuerte?4:2);toast(`🚨 Nuevo ticket · urgencia ${s} · ${nom(t.usuarioReporta)} · ${t.modulo}`,'err');
+ setTimeout(()=>hablar(`Nuevo ticket de urgencia ${s}. Módulo: ${t.modulo}. Levantado por ${nom(t.usuarioReporta)}.`),fuerte?2100:1100)}
+function avisoTomado(t){beep(2);toast(`✅ ${nom(t.usuarioAsignado)} tomó tu ticket ${t.id}`,'ok');
+ setTimeout(()=>hablar(`Tu ticket número ${numTk(t.id)} fue tomado por ${nom(t.usuarioAsignado)}.`),1100)}
+function avisoCierre(t){const rech=t.estado==='rechazado',q=nom(rech?t.rechazadoPor:t.cierra);
+ beep(2);toast(`${rech?'⛔':'✅'} Tu ticket ${t.id} fue ${rech?'rechazado':'cerrado'} por ${q}`,rech?'err':'ok');
+ setTimeout(()=>hablar(`Tu ticket número ${numTk(t.id)} fue ${rech?'rechazado':'cerrado'} por ${q}.`),1100)}
 /* Los navegadores bloquean audio y voz hasta el primer clic de la persona */
 document.addEventListener('click',()=>{try{const A=window.AudioContext||window.webkitAudioContext;_ac=_ac||new A();_ac.resume();speechSynthesis.getVoices()}catch(e){}},{once:true});
 function countTo(el,n){const s=+el.dataset.v||0,t0=performance.now();el.dataset.v=n;(function f(t){const p=Math.min(1,(t-t0)/650);el.textContent=Math.round(s+(n-s)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}

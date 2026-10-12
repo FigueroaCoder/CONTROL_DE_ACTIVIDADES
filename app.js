@@ -1,7 +1,9 @@
 /* ===== Arranque, sesión, render global y vigilancia de SLA ===== */
 const VIEWS={dashboard:renderDashboard,tickets:renderTickets,modulos:renderModulos,tareas:renderTareas,admin:renderAdmin,usuarios:renderUsuarios,chat:renderChat};
 function renderAll(){if(!S.user)return;if(esRep()){renderRep();return}renderSide();renderBadges();renderNotifs();$('[data-v=usuarios]').style.display=esAdmin()?'':'none';VIEWS[cur]();icons()}
-let _rt,_iv;const scheduleRender=()=>{clearTimeout(_rt);_rt=setTimeout(renderAll,150)};
+let _rt,_iv;
+/* function (no const) para que firebase.js la alcance como window.scheduleRender: sin esto las actualizaciones en vivo no repintaban la pantalla */
+function scheduleRender(){clearTimeout(_rt);_rt=setTimeout(renderAll,150)}
 
 function showLogin(v){document.body.classList.toggle('in',!v);$('#lBtn').disabled=false;icons()}
 function loginErr(m){$('#lErr').textContent=m;showLogin(true)}

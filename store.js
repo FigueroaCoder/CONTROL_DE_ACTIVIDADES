@@ -24,7 +24,9 @@ const COL={puntos:{id:x=>x.id},tickets:{id:x=>x.id},notificaciones:{id:x=>String
 /* get devuelve una COPIA: así DB.set puede comparar contra la caché real y detectar qué documentos cambiaron (antes mutaba la caché y no se escribía nada) */
 const DB={get:(k,d)=>C[k]===undefined?d:JSON.parse(JSON.stringify(C[k])),
  set(k,v){const cfg=COL[k],old=new Map((C[k]||[]).map(x=>[cfg.id(x),JSON.stringify(x)])),seen=new Set();C[k]=v;
-  v.forEach(x=>{const id=cfg.id(x);seen.add(id);if(old.get(id)!==JSON.stringify(x))FB.put(k,id,cfg.doc?cfg.doc(x):x)});
+  v.forEach(x=>{const id=cfg.id(x),o=old.get(id);seen.add(id);if(o===JSON.stringify(x))return;
+   if(k==='tickets'){const b=o?(JSON.parse(o).v||0):0;x.v=b+1;FB.putVer(k,id,x,o?b:null)}  /* escritura condicionada a la versión que viste */
+   else FB.put(k,id,cfg.doc?cfg.doc(x):x)});
   old.forEach((_,id)=>{if(!seen.has(id))FB.del(k,id)})}};
 function resetCache(){for(const k in C)C[k]=[];Object.keys(USERS).forEach(k=>delete USERS[k])}
 
