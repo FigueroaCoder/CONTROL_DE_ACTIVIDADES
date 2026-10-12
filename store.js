@@ -1,7 +1,7 @@
 /* ===== Roles, escala de urgencia (SLA) y capa de datos (caché sincronizada con Firestore) ===== */
 const USERS={},S={user:null};               /* USERS se llena desde Firestore (colección usuarios) */
 const RL={admin:'Administrador',comun:'Usuario común',reportero:'Reportero'};
-const rolDe=e=>USERS[e]?USERS[e].r:null,esAdmin=()=>rolDe(S.user)==='admin',puedeGestionar=()=>['admin','comun'].includes(rolDe(S.user));
+const rolDe=e=>USERS[e]?USERS[e].r:null,esAdmin=()=>rolDe(S.user)==='admin',puedeGestionar=()=>['admin','comun'].includes(rolDe(S.user)),esRep=()=>rolDe(S.user)==='reportero';
 const usersRol=rs=>Object.values(USERS).filter(u=>rs.includes(u.r)).map(u=>[u.email,u.n]);
 const notifyRoles=(rs,m)=>usersRol(rs).filter(([e])=>e!==S.user).forEach(([e])=>notify(e,m));
 const nom=e=>USERS[e]?USERS[e].n:(e||'—');
@@ -21,7 +21,8 @@ const MOTIVOS=['Duplicado','Información insuficiente','No es competencia de est
 const C={puntos:[],tickets:[],modulos:[],notificaciones:[],chat:[]};
 const COL={puntos:{id:x=>x.id},tickets:{id:x=>x.id},notificaciones:{id:x=>String(x.id)},chat:{id:x=>String(x.id)},
  modulos:{id:x=>x.replace(/\W/g,'_')+x.length,doc:x=>({nombre:x,orden:Date.now()})}};
-const DB={get:(k,d)=>C[k]??d,
+/* get devuelve una COPIA: así DB.set puede comparar contra la caché real y detectar qué documentos cambiaron (antes mutaba la caché y no se escribía nada) */
+const DB={get:(k,d)=>C[k]===undefined?d:JSON.parse(JSON.stringify(C[k])),
  set(k,v){const cfg=COL[k],old=new Map((C[k]||[]).map(x=>[cfg.id(x),JSON.stringify(x)])),seen=new Set();C[k]=v;
   v.forEach(x=>{const id=cfg.id(x);seen.add(id);if(old.get(id)!==JSON.stringify(x))FB.put(k,id,cfg.doc?cfg.doc(x):x)});
   old.forEach((_,id)=>{if(!seen.has(id))FB.del(k,id)})}};

@@ -1,7 +1,7 @@
 /* ===== Tickets: lista, urgencia/SLA, asignar, resolver, rechazar, detalle ===== */
 let tkF='activos',tkQ='';
-const TKF={activos:activo,abierto:t=>t.estado==='abierto',asignado:t=>t.estado==='asignado',resuelto:t=>t.estado==='resuelto',rechazado:t=>t.estado==='rechazado',todos:()=>true};
-const TKL={activos:'Activos',abierto:'Abiertos',asignado:'Asignados',resuelto:'Resueltos',rechazado:'Rechazados',todos:'Todos'};
+const TKF={activos:activo,abierto:t=>t.estado==='abierto',asignado:t=>t.estado==='asignado',resuelto:t=>t.estado==='resuelto',rechazado:t=>t.estado==='rechazado',revocado:t=>t.estado==='revocado',todos:()=>true};
+const TKL={activos:'Activos',abierto:'Abiertos',asignado:'Asignados',resuelto:'Resueltos',rechazado:'Rechazados',revocado:'Revocados',todos:'Todos'};
 
 function renderTickets(){
  const all=DB.get('tickets',[]);
@@ -23,24 +23,28 @@ function drawTickets(){
   <td>${esc(t.modulo)}</td>
   <td>${urgB(t.urgencia)}<div class="sm mu">Atender en: ${URG[t.urgencia].t}</div>${slaHtml(t)}</td>
   <td>${t.usuarioAsignado?esc(nom(t.usuarioAsignado)):'<span class="warn-t">Sin asignar</span>'}</td>
-  <td>${badge(t.estado)}</td>
-  <td class="ra">${ic('eye','Detalle',`tkDetalle('${t.id}')`)}${can&&activo(t)&&t.usuarioReporta===S.user?ic('pencil','Editar mi ticket',`tkEditar('${t.id}')`)+ic('trash-2','Eliminar mi ticket',`tkEliminar('${t.id}')`,'no'):''}${can&&activo(t)?ic('user-check',t.estado==='abierto'?'Tomar / asignar':'Reasignar / cambiar urgencia',`tkAsignar('${t.id}')`)+ic('check','Resolver',`tkResolver('${t.id}')`,'ok')+(t.usuarioReporta!==S.user?ic('x','Rechazar',`tkRechazar('${t.id}')`,'no'):''):''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">Sin tickets en esta vista</td></tr>`;
+  <td>${badge(t.estado)}${t.estado==='asignado'&&t.avance==='en_proceso'?'<div class="sm" style="color:#fbbf24">▶ En proceso</div>':''}</td>
+  <td class="ra">${ic('eye','Detalle',`tkDetalle('${t.id}')`)}${can&&activo(t)&&t.usuarioReporta===S.user?ic('pencil','Editar mi ticket',`tkEditar('${t.id}')`)+ic('trash-2','Eliminar mi ticket',`tkEliminar('${t.id}')`,'no'):''}${can&&t.estado==='asignado'&&t.avance!=='en_proceso'&&(t.usuarioAsignado===S.user||esAdmin())?ic('play','Marcar en proceso',`tkProceso('${t.id}')`):''}${can&&activo(t)?ic('user-check',t.estado==='abierto'?'Tomar / asignar':'Reasignar / cambiar urgencia',`tkAsignar('${t.id}')`)+ic('check','Resolver',`tkResolver('${t.id}')`,'ok')+(t.usuarioReporta!==S.user?ic('x','Rechazar',`tkRechazar('${t.id}')`,'no'):''):''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">Sin tickets en esta vista</td></tr>`;
  icons();
 }
 function tkMut(id,fn){const a=DB.get('tickets',[]),t=a.find(x=>x.id===id);if(!t)return;fn(t);DB.set('tickets',a);renderAll()}
 
 function tkNuevo(){
  openModal({title:'Reportar ticket / hallazgo',icon:'alert-circle',cls:'b-amb',ok:'Emitir ticket',
- body:fld('Módulo afectado',`<select id="f_mod">${opts(DB.get('modulos',[]).map(m=>[m,m]))}</select>`)+fld('Resumen',`<input id="f_res" placeholder="Ej. Fuga de aire comprimido en jaula B">`)+fld('Detalles del hallazgo',`<textarea id="f_det" rows="3" placeholder="Describe la afectación para que el equipo pueda atenderla"></textarea>`)+urgPick(3),
- onOk(){
-  const resumen=$('#f_res').value.trim(),comentario=$('#f_det').value.trim();
-  if(!resumen||!comentario){toast('Completa el resumen y los detalles','err');return false}
-  const a=DB.get('tickets',[]),u=urgVal(),now=Date.now();let id;do{id='TK-'+Math.floor(1000+Math.random()*9000)}while(a.some(t=>t.id===id));
-  const t={id,modulo:$('#f_mod').value,resumen,comentario,usuarioReporta:S.user,usuarioAsignado:null,estado:'abierto',urgencia:u,creado:now,slaIni:now,sla:calcSla(now,u),hist:[]};
-  addHist(t,'Ticket creado · Urgencia '+URG[u].n+' ('+URG[u].t+')');a.unshift(t);DB.set('tickets',a);
-  const msg=`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}) · ${t.modulo} · levantó ${nom(S.user)}: ${resumen}`;
-  notifyRoles(['admin','comun'],msg);beep();toast('Ticket '+id+' emitido','ok');tkF='activos';renderAll();
- }});
+  body:fld('Módulo afectado',`<select id="f_mod">${opts(DB.get('modulos',[]).map(m=>[m,m]))}</select>`)+fld('Resumen',`<input id="f_res" placeholder="Ej. Fuga de aire comprimido en jaula B">`)+fld('Detalles del hallazgo',`<textarea id="f_det" rows="3" placeholder="Describe la afectación para que el equipo pueda atenderla"></textarea>`)+urgPick(3),
+  onOk(){
+   const resumen=$('#f_res').value.trim(),comentario=$('#f_det').value.trim();
+   if(!resumen||!comentario){toast('Completa el resumen y los detalles','err');return false}
+   const id=tkCrear($('#f_mod').value,resumen,comentario,urgVal());beep();toast('Ticket '+id+' emitido','ok');tkF='activos';renderAll();
+  }});
+}
+/* Alta de ticket compartida por el modal de gestores y el portal del reportero */
+function tkCrear(modulo,resumen,comentario,u){
+ const a=DB.get('tickets',[]),now=Date.now();let id;do{id='TK-'+Math.floor(1000+Math.random()*9000)}while(a.some(t=>t.id===id));
+ const t={id,modulo,resumen,comentario,usuarioReporta:S.user,usuarioAsignado:null,estado:'abierto',urgencia:u,creado:now,slaIni:now,sla:calcSla(now,u),hist:[]};
+ addHist(t,'Ticket creado · Urgencia '+URG[u].n+' ('+URG[u].t+')');a.unshift(t);DB.set('tickets',a);
+ notifyRoles(['admin','comun'],`${u<=2?'🚨 ':''}Nuevo ticket ${id} (${URG[u].n}, atender en ${URG[u].t}) · ${modulo} · levantó ${nom(S.user)}: ${resumen}`);
+ return id;
 }
 function tkAsignar(id){
  const t=DB.get('tickets',[]).find(x=>x.id===id),lista=esAdmin()?usersRol(['admin','comun']):[[S.user,nom(S.user)+' (yo)']];
@@ -48,7 +52,7 @@ function tkAsignar(id){
  body:`<p class="mu sm">${esc(t.resumen)}</p>`+fld('Asignar a',`<select id="f_asg">${opts(lista,t.usuarioAsignado||S.user)}</select>`)+urgPick(t.urgencia),
  onOk(){const asg=$('#f_asg').value,u=urgVal();
   tkMut(id,t=>{if(u!==t.urgencia){addHist(t,`Urgencia: ${URG[t.urgencia].n} → ${URG[u].n}`);t.urgencia=u;t.slaIni=Date.now();t.sla=calcSla(t.slaIni,u);t.alertado=0}
-   t.usuarioAsignado=asg;t.estado='asignado';addHist(t,'Asignado a '+nom(asg)+' · límite '+fmtD(t.sla));
+   if(t.estado==='abierto'||t.usuarioAsignado!==asg)t.avance=null;t.usuarioAsignado=asg;t.estado='asignado';addHist(t,'Asignado a '+nom(asg)+' · límite '+fmtD(t.sla));
    notify(t.usuarioReporta,`Tu ticket ${t.id} fue asignado a ${nom(asg)}. Atención antes de: ${fmtD(t.sla)}`);if(asg!==S.user)notify(asg,`Se te asignó ${t.id} (${URG[u].n}): ${t.resumen}`)});
   beep();toast('Ticket asignado','ok')}});
 }
@@ -89,4 +93,27 @@ function tkEditar(id){
 function tkEliminar(id){
  openModal({title:`Eliminar ${esc(id)}`,icon:'trash-2',cls:'b-no',ok:'Eliminar',body:'<p>El ticket se eliminará de forma permanente.</p>',
  onOk(){DB.set('tickets',DB.get('tickets',[]).filter(t=>t.id!==id));toast('Ticket eliminado');renderAll()}});
+}
+
+/* Quien atiende marca que ya empezó: el reportero lo ve como "En proceso" (antes: "Recién asignado") */
+function tkProceso(id){
+ tkMut(id,t=>{if(t.estado!=='asignado')return;t.avance='en_proceso';addHist(t,'En proceso: '+nom(S.user)+' inició la atención');notify(t.usuarioReporta,`Tu ticket ${t.id} ya está en proceso (${nom(t.usuarioAsignado)}).`)});
+ toast('Ticket marcado en proceso','ok');
+}
+
+/* Revocar: solo quien lo reportó y únicamente mientras nadie lo haya aceptado (estado "abierto") */
+function tkRevocar(id){
+ const t0=DB.get('tickets',[]).find(x=>x.id===id);
+ if(!t0||t0.usuarioReporta!==S.user)return;
+ if(t0.estado!=='abierto')return toast('Este ticket ya fue aceptado, ya no se puede revocar','err');
+ openModal({title:`Revocar ${esc(id)}`,icon:'undo-2',cls:'b-no',ok:'Revocar ticket',
+  body:`<p class="mu sm">${esc(t0.resumen)}</p><p>El ticket se retira y nadie lo atenderá. Solo es posible mientras no haya sido aceptado.</p>`+fld('Motivo (opcional)',`<textarea id="f_rev" rows="2" placeholder="Ej. Ya se resolvió solo / lo levanté por error"></textarea>`),
+  onOk(){
+   const m=$('#f_rev').value.trim();
+   const t=DB.get('tickets',[]).find(x=>x.id===id);
+   if(!t||t.estado!=='abierto'){toast('Alguien acaba de aceptarlo, ya no se puede revocar','err');renderAll();return}
+   tkMut(id,k=>{k.estado='revocado';k.revocado=Date.now();k.motivoRevoca=m||null;addHist(k,'Revocado por quien lo reportó antes de ser aceptado'+(m?': '+m:''));
+    notifyRoles(['admin','comun'],`El ticket ${k.id} fue revocado por ${nom(S.user)}${m?': '+m:''}`)});
+   toast('Ticket revocado','ok');
+  }});
 }

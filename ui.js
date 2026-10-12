@@ -28,7 +28,7 @@ const urgPick=sel=>`<div class="fl"><span>¿Qué tan crítica es la atención?</
 const urgVal=()=>+$('input[name=urg]:checked').value;
 
 /* Helpers compartidos */
-const ST={abierto:['Abierto','#ef4444'],asignado:['Asignado','#f59e0b'],resuelto:['Resuelto','#10b981'],rechazado:['Rechazado','#8393b2'],pendiente:['Pendiente','#ef4444'],en_proceso:['En proceso','#f59e0b'],atendido:['Atendido','#10b981']};
+const ST={abierto:['Abierto','#ef4444'],asignado:['Asignado','#f59e0b'],resuelto:['Resuelto','#10b981'],rechazado:['Rechazado','#8393b2'],revocado:['Revocado','#64748b'],pendiente:['Pendiente','#ef4444'],en_proceso:['En proceso','#f59e0b'],atendido:['Atendido','#10b981']};
 const badge=s=>`<span class="badge" style="--c:${ST[s][1]}">${ST[s][0]}</span>`;
 const urgB=u=>`<span class="badge" style="--c:${URG[u].c}"><i class="dot"></i>${URG[u].n}</span>`;
 const activo=t=>t.estado==='abierto'||t.estado==='asignado';

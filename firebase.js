@@ -13,7 +13,7 @@ const clean=o=>JSON.parse(JSON.stringify(o));
 const SORT={
  puntos:(a,b)=>b.id.localeCompare(a.id),tickets:(a,b)=>b.creado-a.creado,
  notificaciones:(a,b)=>a.id<b.id?1:-1,chat:(a,b)=>a.id-b.id,modulos:(a,b)=>a.orden-b.orden};
-let unsubs=[],ready=new Set(),started=false;
+let unsubs=[],ready=new Set(),started=false,total=6;
 
 window.FB={
  login:(e,p)=>signInWithEmailAndPassword(auth,e,p),
@@ -33,23 +33,27 @@ window.FB={
 function listen(name,fn){
  unsubs.push(onSnapshot(collection(fs,name),s=>{
   fn(s.docs.map(d=>d.data()));
-  if(!started){ready.add(name);if(ready.size===6){started=true;window.appStart(auth.currentUser.email)}}else window.scheduleRender();
+  if(!started){ready.add(name);if(ready.size===total){started=true;window.appStart(auth.currentUser.email)}}else window.scheduleRender();
  },fail));
 }
 onAuthStateChanged(auth,async u=>{
  unsubs.forEach(f=>f());unsubs=[];ready=new Set();started=false;
  if(!u){window.appStop();return}
+ let rol;
  try{
-  if(!(await getDoc(doc(fs,'usuarios',u.uid))).exists()){
+  const perfil=await getDoc(doc(fs,'usuarios',u.uid));
+  if(!perfil.exists()){
    if((await getDoc(doc(fs,'config','init'))).exists()){await signOut(auth);window.loginErr('Tu usuario no tiene perfil. Pide al administrador que lo cree.');return}
    /* Primer acceso de todo el sistema: ese usuario queda como administrador */
    const b=writeBatch(fs);
    b.set(doc(fs,'usuarios',u.uid),{uid:u.uid,email:u.email,nombre:u.email.split('@')[0],rol:'admin'});
-   b.set(doc(fs,'config','init'),{por:u.email,t:Date.now()});await b.commit();
-  }
+   b.set(doc(fs,'config','init'),{por:u.email,t:Date.now()});await b.commit();rol='admin';
+  }else rol=perfil.data().rol;
  }catch(e){fail(e);await signOut(auth);return}
+ /* El reportero solo lee lo de tickets (las reglas le niegan puntos y chat), así que no se suscribe a ellos */
+ const cols=rol==='reportero'?['notificaciones']:['puntos','notificaciones','chat'];total=3+cols.length;
  listen('usuarios',a=>{Object.keys(USERS).forEach(k=>delete USERS[k]);a.forEach(x=>USERS[x.email]={n:x.nombre,r:x.rol,uid:x.uid,email:x.email})});
- ['puntos','notificaciones','chat'].forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
+ cols.forEach(k=>listen(k,a=>{C[k]=a.sort(SORT[k])}));
  /* Ticket nuevo de otra persona: alarma + voz para admin y usuario común */
  listen('tickets',a=>{const prev=new Set(C.tickets.map(t=>t.id));C.tickets=a.sort(SORT.tickets);if(!started)return;const me=auth.currentUser&&auth.currentUser.email;
   if(['admin','comun'].includes(USERS[me]&&USERS[me].r))C.tickets.filter(t=>!prev.has(t.id)&&t.usuarioReporta!==me&&Date.now()-t.creado<120000).forEach(alertaTicket)});

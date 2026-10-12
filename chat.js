@@ -7,8 +7,7 @@ function renderNotifs(){
 }
 function toggleNotifs(){
  $('#nDrop').classList.toggle('on');
- const a=DB.get('notificaciones',[]);a.forEach(n=>{if(n.destinatario===S.user)n.leido=true});
- setTimeout(()=>{DB.set('notificaciones',a);renderNotifs()},1200);
+ setTimeout(()=>{const a=DB.get('notificaciones',[]);a.forEach(n=>{if(n.destinatario===S.user)n.leido=true});DB.set('notificaciones',a);renderNotifs()},1200);
 }
 function limpiarNotifs(){DB.set('notificaciones',DB.get('notificaciones',[]).filter(n=>n.destinatario!==S.user));renderNotifs()}
 document.addEventListener('click',e=>{if(!e.target.closest('.rel'))$('#nDrop').classList.remove('on')});
