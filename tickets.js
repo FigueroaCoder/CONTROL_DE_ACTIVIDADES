@@ -19,11 +19,11 @@ function drawTickets(){
   .sort((a,b)=>(activo(b)-activo(a))||(activo(a)?a.sla-b.sla:b.creado-a.creado));
  $('#tkBody').innerHTML=rows.length?rows.map((t,i)=>`<tr class="row" style="animation-delay:${Math.min(i,10)*35}ms">
   <td class="mono acc">${esc(t.id)}</td>
-  <td><span class="badge" style="--c:#4f8cff"><i data-lucide="box"></i>${esc(t.modulo)}</span> <b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div><div class="sm mu">Reportó: ${esc(nom(t.usuarioReporta))}</div>${t.estado==='rechazado'?`<div class="sm" style="color:#f87171">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
+  <td><span class="badge" style="--c:var(--pri)"><i data-lucide="box"></i>${esc(t.modulo)}</span> <b>${esc(t.resumen)}</b><div class="mu sm">${esc(t.comentario)}</div><div class="sm mu">Reportó: ${esc(nom(t.usuarioReporta))}</div>${t.estado==='rechazado'?`<div class="sm" style="color:var(--bad)">Motivo: ${esc(t.motivoRechazo)}</div>`:''}</td>
   <td>${esc(t.modulo)}</td>
   <td>${urgB(t.urgencia)}<div class="sm mu">Atender en: ${URG[t.urgencia].t}</div>${slaHtml(t)}</td>
   <td>${t.usuarioAsignado?esc(nom(t.usuarioAsignado)):'<span class="warn-t">Sin asignar</span>'}</td>
-  <td>${badge(t.estado)}${t.estado==='asignado'&&t.avance==='en_proceso'?'<div class="sm" style="color:#fbbf24">▶ En proceso</div>':''}</td>
+  <td>${badge(t.estado)}${t.estado==='asignado'&&t.avance==='en_proceso'?'<div class="sm" style="color:var(--warn)">▶ En proceso</div>':''}</td>
   <td class="ra">${ic('eye','Detalle',`tkDetalle('${t.id}')`)}${can&&activo(t)&&t.usuarioReporta===S.user?ic('pencil','Editar mi ticket',`tkEditar('${t.id}')`)+ic('trash-2','Eliminar mi ticket',`tkEliminar('${t.id}')`,'no'):''}${can&&t.estado==='asignado'&&t.avance!=='en_proceso'&&(t.usuarioAsignado===S.user||esAdmin())?ic('play','Marcar en proceso',`tkProceso('${t.id}')`):''}${can&&activo(t)?ic('user-check',t.estado==='abierto'?'Tomar / asignar':'Reasignar / cambiar urgencia',`tkAsignar('${t.id}')`)+ic('check','Resolver',`tkResolver('${t.id}')`,'ok')+(t.usuarioReporta!==S.user?ic('x','Rechazar',`tkRechazar('${t.id}')`,'no'):''):''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">Sin tickets en esta vista</td></tr>`;
  icons();
 }

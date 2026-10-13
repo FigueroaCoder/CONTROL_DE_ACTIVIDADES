@@ -57,7 +57,21 @@ const TITLES={dashboard:'Dashboard',tickets:'Tickets y hallazgos',modulos:'Módu
 let cur='dashboard';
 function go(v){
  const old=$('.view.on');if(old&&v===cur)return;
- const show=()=>{$$('.view').forEach(x=>x.classList.remove('on','out'));$('#v-'+v).classList.add('on');cur=v;
-  $$('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$('#crumb').textContent=TITLES[v];renderAll();scrollTo({top:0,behavior:'smooth'})};
+ const show=()=>{$$('.view').forEach(x=>x.classList.remove('on','out'));$('#v-'+v).classList.add('on');cur=v;if(v==='dashboard')dashAnim=true;
+  $$('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$('#crumb').textContent=TITLES[v];renderAll();scrollTo({top:0})};
  if(old){old.classList.add('out');setTimeout(show,180)}else show();
 }
+
+/* ===== Tema claro / oscuro (se recuerda en este navegador) ===== */
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const temaActual=()=>document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';
+function setTema(t,guardar=true){
+ document.documentElement.setAttribute('data-theme',t);
+ const m=$('meta[name=theme-color]');if(m)m.content=t==='dark'?'#070b14':'#f3f5f9';
+ if(guardar)try{localStorage.setItem('hub-tema',t)}catch(e){}
+ $$('.thbtn').forEach(b=>{const x=t==='dark'?'Cambiar a modo claro':'Cambiar a modo oscuro';b.title=x;b.setAttribute('aria-label',x)});
+ /* Las gráficas toman sus colores del tema: se vuelven a dibujar sin animación */
+ if(guardar&&S.user&&!esRep()&&cur==='dashboard'){dashAnim=false;renderDashboard();icons()}
+}
+const toggleTema=()=>setTema(temaActual()==='dark'?'light':'dark');
+setTema(temaActual(),false);

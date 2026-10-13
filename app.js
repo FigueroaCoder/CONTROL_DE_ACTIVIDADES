@@ -10,7 +10,7 @@ function loginErr(m){$('#lErr').textContent=m;showLogin(true)}
 async function doLogin(e){e.preventDefault();$('#lErr').textContent='';$('#lBtn').disabled=true;
  try{await FB.login($('#lEm').value.trim(),$('#lPw').value)}catch(x){loginErr('Correo o contraseña incorrectos')}}
 function appStart(email){
- S.user=email;const u=USERS[email],rep=esRep();showLogin(false);document.body.classList.toggle('rep',rep);
+ S.user=email;const u=USERS[email],rep=esRep();showLogin(false);setTema(temaActual(),false);document.body.classList.toggle('rep',rep);
  if(rep){$('#rep').innerHTML='';repTab='nuevo';repShown=''}
  else{
   $('#me').innerHTML=`<span class="av">${esc(u.n[0].toUpperCase())}</span><div><b>${esc(u.n)}</b><small>${RL[u.r]}</small></div><button class="ib" title="Cerrar sesión" onclick="FB.logout()"><i data-lucide="log-out"></i></button>`;

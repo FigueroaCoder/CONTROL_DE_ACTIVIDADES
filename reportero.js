@@ -22,6 +22,7 @@ function repShellHtml(){
   <div class="rp-brand"><i data-lucide="ticket"></i><div><b>Mesa de tickets</b><small>Portal de reportes · L10</small></div></div>
   <nav class="rp-tabs">${Object.entries(REPTABS).map(([k,[ic,l]])=>`<button data-t="${k}" onclick="repGo('${k}')"><i data-lucide="${ic}"></i>${l}${k==='mios'?'<em id="rpBMios">0</em>':''}</button>`).join('')}</nav>
   <div class="rp-user">
+   <button class="ib thbtn" onclick="toggleTema()" title="Cambiar tema" aria-label="Cambiar tema"><i data-lucide="sun" class="i-sun"></i><i data-lucide="moon" class="i-moon"></i></button>
    <div class="rel"><button class="ib" onclick="repToggleNotifs()" title="Notificaciones"><i data-lucide="bell"></i><span id="repNB" class="nb"></span></button>
     <div id="repND" class="drop"><div class="dh2"><b>Notificaciones</b><button onclick="limpiarNotifs();repNotifs()">Limpiar</button></div><div id="repNL"></div></div></div>
    <span class="av">${esc(u.n[0].toUpperCase())}</span><div class="rp-nm"><b>${esc(u.n)}</b><small>${RL[u.r]}</small></div>
